@@ -13,3 +13,5 @@ git diff
 
 git add filename
 
+git push origin master
+

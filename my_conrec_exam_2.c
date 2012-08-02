@@ -1,10 +1,3 @@
-
-/****
- * 27/07/2012
- * Trying to imlement exclusion disks.
- *
-*****/
-
 /*******************************************************************************
 *  Copyright (C) 2009-2012 Intel Corporation. All Rights Reserved.
 *  The information and material ("Material") provided below is owned by Intel
@@ -27,7 +20,7 @@
 * 
 *  A static example with an grcar array A of dimensions  (M,N) = (8,8).
 *  The main data structure in the implementation is a single pointer.
-*  Compile with: gcc -o ex my_exclusion2.c paulslib.c -lm bitmaplib.c -llapacke -llapack -lrefblas -L/usr/lib/gcc/x86_64-linux-gnu/4.4 -lgfortran
+*  Compile with: gcc -o con my_conrec_exam_2.c paulslib.c -lm bitmaplib.c -llapacke -llapack -lrefblas -L/usr/lib/gcc/x86_64-linux-gnu/4.4 -lgfortran
 *  Should be compared with the matlab function @tesla ~/predari/Documents/thesis/pseudospectra/grcar_example.m
 * 
 ********************************************************************************
@@ -114,7 +107,7 @@ double **data;
  * PART OF z ARRAY CORRESPONDINGLY THAT STORES COMPLEX NUMBERS. 
  * **/
 double _Complex *z;
-#define SCALE 15
+
 /* Array for the contour levels */
 /***
  * FOR THE TIME BEING ONLY ONE CORRESPONDING TO e=0.1
@@ -135,9 +128,8 @@ int vectorsdrawn = 0;
  FILE *fp;
 
 /* Parameters */
-/*A (m by n)*/
-#define M 32
-#define N 32
+#define M 50
+#define N 50
 #define NGRID 50
 #define LDA N
 #define LDU M
@@ -146,10 +138,10 @@ int vectorsdrawn = 0;
 /***
  * I WOULD LIKE XMAX TO BE DEFINED AS DOUBLE
  ***/
-#define XMAX      4 /*4                /* maximum boundary of x-axis of the domain */
-#define XMIN     -1 /*-2                 /*minimum*/
-#define YMAX      4 /*4                 /* maximum boundary of y-axis of the domain */
-#define YMIN      -4 /*-4                    /*minimum*/
+#define XMAX      4                /* maximum boundary of x-axis of the domain */
+#define XMIN     -2                 /*minimum*/
+#define YMAX      4                 /* maximum boundary of y-axis of the domain */
+#define YMIN      -4                    /*minimum*/
 
 /* Main program */
 int main(){
@@ -160,19 +152,16 @@ int main(){
         /* Local arrays */
 		//void prtdat();
 		double *s;
-        double *superb; 
-        int svd_count=0;
-		int i, j ,ix ,iy, index, ii, jj, k ;    
+        double *superb;
+	int svd_count=0;
+		int i, j ,ix ,iy, index, ii, jj ;    
 		double  x_min,
 				x_max,
 				y_min,
 				y_max,
 				stepx,						/* step size for finding gridpoints coordinates in x and y dimension.*/
 				stepy;
-		double e=0.1;  
-		double r;   /*r is the radious of exclusion disks */
-		int i_max, j_max, start_point; 
-		double gamma;     
+		double e=0.1;        
 		/* Array used for the ploting of
 		* grid, as an input to the 
 		* draw_pseudospectra function. */
@@ -194,18 +183,18 @@ int main(){
 		
 	
 		//allocating the 2D array data.
-	  if ((data = malloc(SCALE*NGRID*sizeof(double *))) == NULL) {
+	  if ((data = malloc(NGRID*sizeof(double *))) == NULL) {
       fprintf(stderr,"Failed to malloc space for the data\n");
       exit(-1);
    }
-   for (i=0;i<SCALE*NGRID;i++) {
-      if ((data[i] = malloc(SCALE*NGRID*sizeof(double))) == NULL) {
+   for (i=0;i<NGRID;i++) {
+      if ((data[i] = malloc(NGRID*sizeof(double))) == NULL) {
          fprintf(stderr,"Failed to malloc space for the data\n");
          exit(-1);
       }
    }
-   for (i=0;i<SCALE*NGRID;i++){
-      for (j=0;j<SCALE*NGRID;j++){
+   for (i=0;i<NGRID;i++){
+      for (j=0;j<NGRID;j++){
          data[i][j] = 0;
 	 //   printf("%f\t",data[i][j]);
 	 }
@@ -242,20 +231,14 @@ int main(){
 		printf("To stepx einai %f\n",stepx);
 		printf("To stepy einai %f\n",stepy);	
 	   
-		
+
 	
 	   for (i =0; i <NGRID*NGRID; i++){
 			z[i]=x_min+(i/n * stepx)+(y_min + (i%n * stepy))*I;
-		    printf("%f+%fi\n",creal(z[i]),cimag(z[i]));
+		 // z[i]=lapack_make_complex_double( i/n,i%n); just for testing
+		//**	printf( " (%6.2f,%6.2f)", lapack_complex_double_real(z[i]), lapack_complex_double_imag(z[i]) );
 		}
-       
-       //memset(plot,-1,(NGRID*NGRID)*sizeof(double));
-	    for (i =0; i <NGRID*NGRID; i++){
-		    plot[i]=-1;
-		//	printf("%f\t",plot[i]);
-		}
-	   
-	   
+
 	   memset(temp,0,(lda*m)*sizeof(*temp));
 	   memset(a,0,(lda*m)*sizeof(*a));
 	   memset(u,0,(ldu*m)*sizeof(*u));
@@ -298,28 +281,35 @@ int main(){
 			}
 		} 
 
-		print_matrix("Entry Matrix A", m, n, a, lda );
+		//print_matrix("Entry Matrix A", m, n, a, lda );
 		for (iy = 0; iy < NGRID*NGRID; iy++){   
-			
-
-			
-			if(plot[iy]==0) continue;
-			
-			
 			 //printf("temp size %d, a size %d",(lda*m)*sizeof(*temp),(lda*m)*sizeof(*a));
 			memcpy(temp, a ,(lda*m)*sizeof(*temp));
-			
+			 //~ print_matrix( "Entry Matrix Temp just after memcopy", m, n, temp, lda );
+			 //~ print_matrix( "Entry Matrix A just after memcopy", m, n, a, lda );
+			// printf( "To  z[%d](%6.4f,%6.4f)\n",iy,lapack_complex_double_real(z[iy]),lapack_complex_double_imag(z[iy]) );
 			for (i = 0; i < lda*m ; i=i+(n+1)){	
-
+				//~ printf("%d",i);
+				//~ printf( "To  a[%d](%6.2f,%6.2f)\t",i, lapack_complex_double_real(a[i]), lapack_complex_double_imag(a[i]) );
+				//~ printf( "To  z[%d](%6.2f,%6.2f)\n",iy,lapack_complex_double_real(z[iy]),lapack_complex_double_imag(z[iy]) );
 				
 				temp[i]=a[i]-z[iy];
-
+				//~ temp[index] = lapack_make_complex_double(lapack_complex_double_real(a[index])-lapack_complex_double_real(z[iy]),  lapack_complex_double_imag(a[index])-lapack_complex_double_imag(z[iy])    );
+				//~ printf( " temp[%d](%6.2f,%6.2f)", i,lapack_complex_double_real(temp[i]), lapack_complex_double_imag(temp[i]) );
+				//~ printf( "\n");
 			}
+			//printf("GRCAR MATRIX AFTER SUBSTRACTION (%d,%d)\n",iy/n,iy%n);
+			//~ print_matrix( "Entry Matrix Temp just before", m, n, temp, lda );
+	
+			/* Executable statements */
+			//~ print_matrix( "AT THE BEGINING OF THE FOR LOOP", m, n, a, lda );
 			printf( "LAPACKE_zgesvd (row-major, high-level) Example Program Results(%d,%d)\n",iy/NGRID,iy%NGRID);
 			/* Compute SVD */
 			info = LAPACKE_zgesvd( LAPACK_ROW_MAJOR, 'N', 'N', m, n, temp, lda, s, NULL, ldu, NULL, ldvt, superb );
 			svd_count++;
-
+			//~ 
+			//~ print_matrix( "IN THE MIDDLE OF THE FOR LOOP", m, n, a, lda );
+			//~ print_matrix( "IN THE MIDDLE OF THE FOR LOOP-TEMP", m, n, temp, lda );
 			/* Check for convergence */
 			if( info > 0 ) {
 				printf( "The algorithm computing SVD failed to converge.\n" );
@@ -327,87 +317,38 @@ int main(){
 			}
 			/* Print singular values */
 			if( info == 0){
-	
+//				printf("Solution\n");	
 				for ( i= 0; i< m; i++ ) {
-
+//					printf(" s[ %d ] = %f\n", i, s[ i ] );
 				}
 			}
 			
 			if(s[m-1] <= e){
 				printf("THIS ELEMENT BELONGS TO PSEUDOSPECTRA (%d,%d):%6.10f\n",(iy/NGRID+1),(iy%NGRID+1),s[m-1]);
-
+				/*to index tis parapanw ektupwshs anaferetai sto index tou antistoixou mhtrwou apo thn synarthsh ths matlab grcar_example.m*/
+				//~ plot[iy/n][iy%n]=s[m-1];
 				plot[iy]=s[m-1];
 			 }
-				else {
-
-					r = s[m-1]-e;
-					
-					
-					i_max = r/stepx;
-					j_max = r/stepy;
-					printf("(x=%d,y=%d)\n",i_max,j_max);
-					//plot[iy]=0;
-					
-					/* for x direction */
-				//	start_point = iy-j_max*NGRID-i_max;
-					//~ 
-					//~ for(i=start_point; i<start_point + j_max*2*NGRID + i_max*2 + 1; i++){
-						//~ if(i < 0 || (i%NGRID > (iy + i_max )%NGRID) || (i%NGRID < (iy - i_max )%NGRID)) continue;
-						//~ else plot[i] = 0;
-					//~ }
-					
-					//~ for(i=start_point; i<start_point + j_max*2*NGRID+1; i=i+NGRID){
-							//~ printf("%d\n",i);
-						//~ for(j=0; j < 2*i_max+1; j++){
-					//~ //		printf("%d\n",i+j);
-							//~ if( (i+j) < 0 || (i+j)%NGRID>i_max ) continue;
-							//~ 
-							//~ else {printf("%d\n",i+j); plot[i+j]=0;}
-						//~ }
-					//~ }
-					int upper_middle = iy-j_max*NGRID;
-					int lower_middle = iy + j_max*NGRID;
-					double gamma;
-					
-					for(i = upper_middle; i < lower_middle+1; i=i+NGRID){
-					 int indi=j_max;
-					// printf("To i einai %d\n",i);
-					 for(j=0; j < i_max+1; j++){
-						if( (i+j) < 0 || (i+j)/NGRID != i/NGRID ) continue;
-						else { /*for now we check every gridpoint of the square if it belongs to the disk*/
-							 // printf("%d\n",i+j);
-							 gamma = sqrt(pow(abs(indi)*stepy,2) + pow(j*stepx,2));
-			   //              printf("The radius in this exclusion disk is %f\n",r);
-				//			 printf("to gamma tou %d einai %f\n",i+j,gamma);
-							 if(gamma < r) plot[i+j]=0; 
-							 }
-					    if( (i-j) < 0 || (i-j)/NGRID != i/NGRID ) continue;
-					    else { 
-					//		printf("The radius in this exclusion disk is %f\n",r);
-							gamma = sqrt(pow(abs(indi)*stepy,2) + pow(j*stepx,2));
-						//	 printf("to gamma tou %d einai %f\n",i-j,gamma);
-							 if(gamma < r) plot[i-j]=0;
-							}
-			       }
-			       indi--;
-				}
-
-		//	printf("Iteration:%d\n",iy);
-
-
-		//	for (i =0; i <NGRID*NGRID; i++){
-		//	if(i%NGRID==0) printf("\n");
-		//	printf("%f\t",plot[i]);
-		//    }
-		    
-		}
+			 //~ else   plot[iy/n][iy%n]=0;
+				else plot[iy]=0;
+		
+	
+		
+	//~ print_rmatrix( "Singular values", 1, m, s, 1 );
+	
+	/* Print left singular vectors */
+	// print_matrix( "Left singular vectors (stored columnwise)", m, m, u, ldu );
+	/* Print right singular vectors */
+	// print_matrix( "Right singular vectors (stored rowwise)", m, n, vt, ldvt );
 		}
 		
-		prtdat(NGRID, NGRID, plot, "svd_with_disks.data");
+		
+				prtdat(NGRID, NGRID, plot, "svd_with_disks.data");
 		printf("Total number of svd evaluations in the %d,%d grid is:\t %d\n",NGRID,NGRID,svd_count);
 		
+		
 		//giving values to data from plot
-		for (i = 0; i<NGRID*NGRID; i++)  data[SCALE*(i/NGRID)][SCALE*(i%NGRID)] = plot[i];
+		for (i = 0; i<NGRID*NGRID; i++) data[i/NGRID][i%NGRID] = plot[i];
 	   /////////////////
     BITMAP4 black = {0,0,0,0};
     Draw_Line(image,NGRID,NGRID,x_min,y_min,x_max,y_min,black);
@@ -417,25 +358,24 @@ int main(){
 		//~ contours[2] = 0.001;
 		//~ contours[3] = 0.0001;
 		//~ contours[4] = 0.00001;
-		if ((image = Create_Bitmap(SCALE*NGRID,SCALE*NGRID)) == NULL) {
+		if ((image = Create_Bitmap(NGRID,NGRID)) == NULL) {
       fprintf(stderr,"Malloc of bitmap failed\n");
       exit(-1);
    }
- Erase_Bitmap(image,SCALE*NGRID,SCALE*NGRID,grey); /* Not strictly necessary */
-   for (j=0;j<SCALE*NGRID;j++) {
-      for (i=0;i<SCALE*NGRID;i++) {
-         colour = GetColour(data[i][j],0,0.1,1);      /////////////////////////////////////////////
+   Erase_Bitmap(image,NGRID,NGRID,grey); /* Not strictly necessary */
+   for (j=0;j<NGRID;j++) {
+      for (i=0;i<NGRID;i++) {
+         colour = GetColour(data[i][j],0,0.1,1);                   /////////////////////////////////////////////////////
          col.r = colour.r * 255;
-        // col.b = colour.b * 255;
-       //  Draw_Pixel(image,SCALE*NGRID,SCALE*NGRID,(double)i,(double)j,col);
-        //          colour = GetColour(data[i][j],0,0.0001,1);      /////////////////////////////////////////////
-       //  col.g = colour.g * 255;
-         Draw_Pixel(image,SCALE*NGRID,SCALE*NGRID,(double)i,(double)j,col);
+         col.g = colour.g * 255;
+         col.b = colour.b * 255;
+         Draw_Pixel(image,NGRID,NGRID,(double)i,(double)j,col);
       }
    }
 
+
    /* Finally do the contouring */
-   CONREC(data,0,SCALE*NGRID-1,0,SCALE*NGRID-1,
+   CONREC(data,0,NGRID-1,0,NGRID-1,
       z,NCONTOUR,contours,drawline);
    fprintf(stderr,"Drew %d vectors\n",vectorsdrawn);
 
@@ -448,7 +388,7 @@ int main(){
       fprintf(stderr,"Failed to open output image\n");
       exit(-1);
    }
-   Write_Bitmap(fp,image,SCALE*NGRID,SCALE*NGRID,12);
+   Write_Bitmap(fp,image,NGRID,NGRID,12);
    fclose(fp);
 
 		
@@ -504,7 +444,7 @@ void drawline(double x1,double y1,double x2,double y2,double z)
       //~ fprintf(stderr,"Shouldn't get here, y out of bounds: %g %g\n",y1,y2);
   
   
-   Draw_Line(image,SCALE*NGRID,SCALE*NGRID,(int)x1,(int)y1,(int)x2,(int)y2,black);
+   Draw_Line(image,NGRID,NGRID,(int)x1,(int)y1,(int)x2,(int)y2,black);
 
    
    vectorsdrawn++;
@@ -519,7 +459,6 @@ void drawline(double x1,double y1,double x2,double y2,double z)
    nc              ! number of contour levels
    z               ! contour levels in increasing order
 */
-
 void CONREC(double **d,int ilb,int iub,int jlb,int jub,
    double _Complex *zcomplex,int nc,double *z,
    void (*ConrecLine)(double,double,double,double,double))
@@ -541,7 +480,6 @@ void CONREC(double **d,int ilb,int iub,int jlb,int jub,
    };
    double temp1,temp2;
 
-
    for (j=(jub-1);j>=jlb;j--) {
       for (i=ilb;i<=iub-1;i++) {
          temp1 = MIN(d[i][j],d[i][j+1]);
@@ -558,12 +496,12 @@ void CONREC(double **d,int ilb,int iub,int jlb,int jub,
             for (m=4;m>=0;m--) {
                if (m > 0) {
                   h[m]  = d[i+im[m-1]][j+jm[m-1]]-z[k];
-                  xh[m] =/*x*/ SCALE*creal(zcomplex[i+im[m-1]]);
-                  yh[m] = SCALE*cimag(zcomplex[j+jm[m-1]]);
+                  xh[m] =/*x*/ creal(zcomplex[i+im[m-1]]);
+                  yh[m] = cimag(zcomplex[j+jm[m-1]]);
                } else {
                   h[0]  = 0.25 * (h[1]+h[2]+h[3]+h[4]);
-                  xh[0] = 0.50 * SCALE*(creal(zcomplex[i]+zcomplex[i+1]));/*x*/
-                  yh[0] = 0.50 * SCALE*(cimag(zcomplex[j]+zcomplex[j+1]));
+                  xh[0] = 0.50 * (creal(zcomplex[i]+zcomplex[i+1]));/*x*/
+                  yh[0] = 0.50 * (cimag(zcomplex[j]+zcomplex[j+1]));
                }
                if (h[m] > 0.0)
                   sh[m] = 1;
@@ -672,4 +610,3 @@ void CONREC(double **d,int ilb,int iub,int jlb,int jub,
       } /* i */
    } /* j */
 }
-

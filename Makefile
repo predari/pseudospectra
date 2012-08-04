@@ -1,16 +1,10 @@
 ### Maria's Makefile ######################################
 ###                                                     ###
-### Compiled commanmd:                                  ###
-###                                                     ###
-### gcc -o con                                          ###
-###	conrec-example.c paulslib.c                     ###
-###	-lm bitmaplib.c -llapacke -llapack -lrefblas    ###
-###	-L/usr/lib/gcc/x86_64-linux-gnu/4.4 -lgfortran  ###
 ###########################################################
 
-OBJ  		= conrec-example.o exclusion.o
+OBJ  		= exclusion_none.o exclusion_disk.o
 LINKOBJ 	= paulslib.o bitmaplib.o 
-BIN 		= conrec-example exclusion
+BIN 		= exclusion_none exclusion_disk
 INC_PATH	= 
 LIB_PATH 	= /usr/lib/gcc/x86_64-linux-gnu/4.4
 LIBS 		= -lm -llapacke -llapack -lrefblas -lgfortran
@@ -21,7 +15,7 @@ RM = rm -f
 ### Actions ###
 .PHONY: all
 
-all: conrec-example exclusion
+all: exclusion_none exclusion_disk
 
 cleanObj:
 	${RM} $(OBJ) $(LINKOBJ)
@@ -31,19 +25,19 @@ clean:
 
 
 ### Executables ###
-conrec-example: conrec-example.o $(LINKOBJ)
-	$(CC) -o conrec-example conrec-example.o $(LINKOBJ) $(LIBS)
+exclusion_none: exclusion_none.o $(LINKOBJ)
+	$(CC) -o exclusion_none exclusion_none.o $(LINKOBJ) $(LIBS)
 
-exclusion: exclusion.o $(LINKOBJ)
-	$(CC) -o exclusion exclusion.o $(LINKOBJ) $(LIBS)
+exclusion_disk: exclusion_disk.o $(LINKOBJ)
+	$(CC) -o exclusion_disk exclusion_disk.o $(LINKOBJ) $(LIBS)
 
 
 ### Object files (src) ###
-conrec-example.o: src/conrec-example.c
-	$(CC) -c src/conrec-example.c -o conrec-example.o $(CFLAGS)
+exclusion_none.o: src/exclusion_none.c
+	$(CC) -c src/exclusion_none.c -o exclusion_none.o $(CFLAGS)
 
-exclusion.o: src/exclusion.c
-	$(CC) -c src/exclusion.c -o exclusion.o $(CFLAGS)
+exclusion_disk.o: src/exclusion_disk.c
+	$(CC) -c src/exclusion_disk.c -o exclusion_disk.o $(CFLAGS)
 
 
 ### Object files (lib) ###
@@ -52,4 +46,4 @@ paulslib.o: lib/paulslib.c lib/paulslib.h
 
 bitmaplib.o: lib/bitmaplib.c lib/bitmaplib.h
 	$(CC) -c  lib/bitmaplib.c -o bitmaplib.o $(CFLAGS)
-
+	

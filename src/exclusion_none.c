@@ -8,6 +8,7 @@
 #include "../lib/bitmaplib.h"
 
 /* Parameters */
+/*  A (m by n) */
 #define M			50
 #define N			50
 #define NGRID		50
@@ -18,7 +19,7 @@
 #define XMIN	   -2	/* minimum */
 #define YMAX		4	/* maximum boundary of y-axis of the domain */
 #define YMIN	   -4	/* minimum */
-#define SCALE		3	/* Scale ratio of the data */
+#define SCALE		1	/* Scale ratio of the data */
 #define NCONTOUR 	5	/* Number of contour levels */
 
 /* Constants */
@@ -38,15 +39,12 @@ void conrec (double **, int, int, int, int, double _Complex *, int, double *, vo
 /* DEBUG */
 int vectorsdrawn = 0;
 
-
 int main ( int argc, char **argv ) 
 {
   int i, j, ix, iy, index, ii, jj;
 
   double x_min, x_max, y_min, y_max, *s, *superb, *plot, **data;
-
   double stepx, stepy; // Step size for finding gridpoints coordinates in x and y dimension.
-  
   double e=0.1;
   
   double _Complex *z;
@@ -115,7 +113,6 @@ int main ( int argc, char **argv )
   memset ( vt, 0, ( ldvt * m ) * sizeof ( *vt ) );
 
   j = 0;
-
   for ( i = 0; i < lda * m; i = i + n ) {
 	if ( i == 0 ) {
 	  a[i] = lapack_make_complex_double ( 1, 0 );
@@ -148,31 +145,35 @@ int main ( int argc, char **argv )
   }
 
   //print_matrix("Entry Matrix A", m, n, a, lda );
-  for ( iy = 0; iy < NGRID * NGRID; iy++ ) {
-      memcpy ( temp, a, ( lda * m ) * sizeof ( *temp ) );
+  for ( iy = 0; iy < NGRID * NGRID; iy++ )
+  {
+	memcpy ( temp, a, ( lda * m ) * sizeof ( *temp ) );
 
-      for ( i = 0; i < lda * m; i = i + ( n + 1 ) ) {
-		temp[i] = a[i] - z[iy];
-      }
+	for ( i = 0; i < lda * m; i = i + ( n + 1 ) ){
+	  temp[i] = a[i] - z[iy];
+	}
 
-      printf ( "LAPACKE_zgesvd (row-major, high-level) Example Program Results(%d,%d)\n", iy / NGRID, iy % NGRID );
+	printf("LAPACKE_zgesvd (row-major, high-level) Example Program Results(%d,%d)\n", iy / NGRID, iy % NGRID );
 
-      /* Compute SVD */
-      info = LAPACKE_zgesvd ( LAPACK_ROW_MAJOR, 'N', 'N', m, n, temp, lda, s, NULL, ldu, NULL, ldvt, superb );
+	/* Compute SVD */
+	info = LAPACKE_zgesvd ( LAPACK_ROW_MAJOR, 'N', 'N', m, n, temp, lda, s, NULL, ldu, NULL, ldvt, superb );
 
-      /* Check for convergence */
-      if ( info > 0 ) {
-		printf ( "The algorithm computing SVD failed to converge.\n" );
-		exit ( 1 );
-      }
+	/* Check for convergence */
+	if ( info > 0 ) {
+	  printf ( "The algorithm computing SVD failed to converge.\n" );
+	  exit (1);
+	}
 
-      if ( s[m - 1] <= e ) {
-		printf ( "THIS ELEMENT BELONGS TO PSEUDOSPECTRA (%d,%d):%6.10f\n", ( iy / NGRID + 1 ), ( iy % NGRID + 1 ), s[m - 1] );
-		plot[iy] = s[m - 1];
-      } else
-		plot[iy] = 0;
+	if ( s[m-1] <= e ) {
+	  printf( "THIS ELEMENT BELONGS TO PSEUDOSPECTRA (%d,%d):%6.10f\n", ( iy / NGRID + 1 ), ( iy % NGRID + 1 ), s[m - 1] );
+	  plot[iy] = s[m - 1];
+	}
+	else
+	  plot[iy] = 0;
 
   }
+  
+  prtdat ( NGRID, NGRID, plot, "svd_no_disks.data" );
 
   /* GENERATE CONTOUR */
   double contours[NCONTOUR]; 	/* Contains the desiRED_COLOR contour levels */
@@ -180,8 +181,6 @@ int main ( int argc, char **argv )
 
   COLOUR colour;
   BITMAP4 col, bgcolor = BLACK_COLOR;
-
-  prtdat ( NGRID, NGRID, plot, "svd_no_disks.data" );
 
   /* Giving values to data from plot */
   for ( i = 0; i < NGRID * NGRID; i++ )
@@ -243,10 +242,6 @@ int main ( int argc, char **argv )
 
 } /* End of LAPACKE_zgesvd Example */
 
-
-/**
- * Auxiliary routine: printing a matrix
- */
 void print_matrix (char *desc, lapack_int m, lapack_int n, lapack_complex_double * a, lapack_int lda)
 {
     lapack_int i, j;
@@ -260,9 +255,6 @@ void print_matrix (char *desc, lapack_int m, lapack_int n, lapack_complex_double
     }
 }
 
-/** 
- * Auxiliary routine: printing a vector of integers 
- */
 void print_int_vector (char *desc, lapack_int n, lapack_int * a)
 {
     lapack_int j;

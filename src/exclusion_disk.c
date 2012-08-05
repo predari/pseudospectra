@@ -44,6 +44,8 @@ int vectorsdrawn = 0;
 int main ( int argc, char **argv ) 
 {
   /* Local Variables */
+  char flname[32];
+  
   int i, j, ix, iy, index, ii, jj, i_max, j_max, start_point;
   int svd_count=0;
   
@@ -83,17 +85,17 @@ int main ( int argc, char **argv )
   }
 
   for ( i = 0; i < SCALE * NGRID; i++ ) {
-      if ( ( data[i] = malloc ( SCALE * NGRID * sizeof ( double ) ) ) == NULL ) {
+	if ( ( data[i] = malloc ( SCALE * NGRID * sizeof ( double ) ) ) == NULL ) {
 	  fprintf ( stderr, "Failed to malloc space for the data\n" );
 	  exit ( -1 );
-      }
+	}
   }
 
   for ( i = 0; i < SCALE * NGRID; i++ ) {
-      for ( j = 0; j < SCALE * NGRID; j++ ) {
-		data[i][j] = 0;
-		//printf("%f\t",data[i][j]);
-      }
+	for ( j = 0; j < SCALE * NGRID; j++ ) {
+	  data[i][j] = 0;
+	  //printf("%f\t",data[i][j]);
+	}
   }
 
   x_min = XMIN;
@@ -155,7 +157,7 @@ int main ( int argc, char **argv )
 	}
   }
 
-  //print_matrix ( "Entry Matrix A", m, n, a, lda );
+  print_matrix ( "Entry Matrix A", m, n, a, lda );
   
   for ( iy = 0; iy < NGRID*NGRID; iy++ )
   {
@@ -225,12 +227,14 @@ int main ( int argc, char **argv )
   
   printf("Total number of svd evaluations in the %d,%d grid is:\t %d\n",NGRID, NGRID, svd_count);
   
-  prtdat(NGRID, NGRID, plot, "svd_with_disks.data");
+  strcpy(flname, argv[0]);
+  strcat(flname, "-DATA.dat");
+  prtdat(NGRID, NGRID, plot, flname);
 
   /* GENERATE CONTOUR */
   #define NCONTOUR 1			/* Number of contour levels */
   double contours[NCONTOUR]; 	/* Contains the desiRED_COLOR contour levels */
-  double *xaxis,*yaxis;		/* Arrays for the x axis and y axis coordinates */
+  double *xaxis,*yaxis;			/* Arrays for the x axis and y axis coordinates */
   BITMAP4 *image;				/* Image on which the contours will be drawn, see bitmaplib.c */
   COLOUR colour;
   BITMAP4 col, bgcolor = BLACK_COLOR;
@@ -293,7 +297,9 @@ int main ( int argc, char **argv )
   
   fprintf(stderr,"Drew %d vectors\n",vectorsdrawn);
 
-  FILE *fp = fopen ( "image_NO_SCALE.tga", "w" );
+  strcpy(flname, argv[0]);
+  strcat(flname, "-IMG.tga");
+  FILE *fp = fopen (flname, "w" );
   Write_Bitmap ( fp, image, SCALE*NGRID, SCALE*NGRID, 12 );
 
   fclose ( fp );

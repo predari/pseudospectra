@@ -42,16 +42,18 @@ int vectorsdrawn = 0;
 int main ( int argc, char **argv ) 
 {
   /* Local Variables */
+  char flname[32];
+  
   int i, j, ix, iy, index, ii, jj;
-
+  
   double x_min, x_max, y_min, y_max, *s, *superb, *plot, **data;
   double stepx, stepy; // Step size for finding gridpoints coordinates in x and y dimension.
   double e=0.1;
   
   double _Complex *z;
-
+  
   lapack_complex_double *a, *temp, *u, *vt;
-
+  
   lapack_int 
 	info,
 	m 	= M, 
@@ -72,15 +74,15 @@ int main ( int argc, char **argv )
 
   /* Allocating the 2D array data. */
   if ( ( data = malloc ( SCALE * NGRID * sizeof ( double * ) ) ) == NULL ) {
-      fprintf ( stderr, "Failed to malloc space for the data\n" );
-      exit ( -1 );
+	fprintf ( stderr, "Failed to malloc space for the data\n" );
+	exit ( -1 );
   }
 
   for ( i = 0; i < SCALE * NGRID; i++ ) {
-      if ( ( data[i] = malloc ( SCALE * NGRID * sizeof ( double ) ) ) == NULL ) {
+	if ( ( data[i] = malloc ( SCALE * NGRID * sizeof ( double ) ) ) == NULL ) {
 	  fprintf ( stderr, "Failed to malloc space for the data\n" );
 	  exit ( -1 );
-      }
+	}
   }
 
   for ( i = 0; i < SCALE * NGRID; i++ ) {
@@ -117,12 +119,12 @@ int main ( int argc, char **argv )
   for ( i = 0; i < lda * m; i = i + n ) {
 	if ( i == 0 ) {
 	  a[i] = lapack_make_complex_double ( 1, 0 );
-	  a[i + 1] = lapack_make_complex_double ( 1, 0 );
-	  a[i + 2] = lapack_make_complex_double ( 1, 0 );
-	  a[i + 3] = lapack_make_complex_double ( 1, 0 );
+	  a[i+1] = lapack_make_complex_double ( 1, 0 );
+	  a[i+2] = lapack_make_complex_double ( 1, 0 );
+	  a[i+3] = lapack_make_complex_double ( 1, 0 );
 	} else if ( i == ( n - 3 ) * n ) {
-	  a[i + j] = lapack_make_complex_double ( -1, 0 );
-	  a[i + ( j + 1 )] = lapack_make_complex_double ( 1, 0 );
+	  a[i+j] = lapack_make_complex_double ( -1, 0 );
+	  a[i+( j + 1 )] = lapack_make_complex_double ( 1, 0 );
 	  a[i + ( j + 2 )] = lapack_make_complex_double ( 1, 0 );
 	  a[i + ( j + 3 )] = lapack_make_complex_double ( 1, 0 );
 	  j++;
@@ -145,7 +147,8 @@ int main ( int argc, char **argv )
 	}
   }
 
-  //print_matrix("Entry Matrix A", m, n, a, lda );
+  print_matrix("Entry Matrix A", m, n, a, lda );
+  
   for ( iy = 0; iy < NGRID * NGRID; iy++ )
   {
 	memcpy ( temp, a, ( lda * m ) * sizeof ( *temp ) );
@@ -174,7 +177,11 @@ int main ( int argc, char **argv )
 
   }
   
-  prtdat ( NGRID, NGRID, plot, "svd_no_disks.data" );
+  /* Cosntruct a file name that looks like
+   * `executable`-DATA.dat */
+  strcpy(flname, argv[0]);
+  strcat(flname, "-DATA.dat");
+  prtdat ( NGRID, NGRID, plot, flname);
 
   /* GENERATE CONTOUR */
   #define NCONTOUR 	3	/* Number of contour levels */
@@ -243,22 +250,10 @@ int main ( int argc, char **argv )
   
   fprintf(stderr,"Drew %d vectors\n",vectorsdrawn);
   
-  FILE *fp = fopen ( "image_NO_SCALE.tga", "w" );
+  strcpy(flname, argv[0]);
+  strcat(flname, "-IMG.tga");
+  FILE *fp = fopen (flname, "w" );
   Write_Bitmap ( fp, image, SCALE*NGRID, SCALE*NGRID, 12 );
-
-  /* Create a bigger image */
-  if (0) {
-	const int sc = 10;
-	BITMAP4 *bigImage = bigImage = Create_Bitmap ( sc*SCALE*NGRID, sc*SCALE*NGRID );
-
-	fp = fopen ( "image_BICUBIC_SCALE.tga", "w" );
-	BiCubicScale ( image, SCALE*NGRID, SCALE*NGRID, bigImage, sc*SCALE*NGRID, sc*SCALE*NGRID );
-	Write_Bitmap ( fp, bigImage, sc*SCALE*NGRID, sc*SCALE*NGRID, 12 );
-
-	fp = fopen ( "image_GAUSSIAN_SCALE.tga", "w" );
-	GaussianScale ( image, SCALE*NGRID, SCALE*NGRID, bigImage, sc*SCALE*NGRID, sc*SCALE*NGRID, 0.5 );
-	Write_Bitmap ( fp, bigImage, sc*SCALE*NGRID, sc*SCALE*NGRID, 12 );
-  }
   
   fclose ( fp );
   exit ( 0 );

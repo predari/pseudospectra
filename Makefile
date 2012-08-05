@@ -8,7 +8,7 @@ BIN 		= exclusion_none exclusion_disk
 INC_PATH	= 
 LIB_PATH 	= /usr/lib/gcc/x86_64-linux-gnu/4.4
 LIBS 		= -lm -llapacke -llapack -lrefblas -lgfortran
-CFLAGS 		= -I$(INC_PATH) -L$(LIB_PATH) -Wall
+CFLAGS 		= -I$(INC_PATH) -L$(LIB_PATH) 
 RM = rm -f
 
 
